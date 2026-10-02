@@ -13,25 +13,33 @@
 ## 🏛️ Architecture Overview
 
 ```mermaid
-graph TD
+flowchart TD
     Analyst["Analyst / Client (CLI Playground / Gemini Enterprise)"] --> Security["Google Cloud Model Armor Screening"]
     Security --> Agent["Industry Watch Root Agent (Gemini 2.5 Flash)"]
     
-    subgraph State & Persistence
-        Agent <--> Sessions["Agent Platform AI Sessions (Multi-Turn State)"]
-        Agent <--> Memory["Agent Platform Memory Bank (Watch-list & Preferences)"]
+    subgraph StatePersistence["State & Persistence"]
+        Sessions["Agent Platform AI Sessions (Multi-Turn State)"]
+        Memory["Agent Platform Memory Bank (Watch-list & Preferences)"]
     end
 
-    subgraph Deterministic Tooling Layer (No Internal LLM)
-        Agent --> ToolSEC["fetch_company_disclosures (SEC EDGAR 8-K)"]
-        Agent --> ToolGDELT["fetch_public_claims (GDELT & IR Feeds)"]
-        Agent --> ToolArmor["screen_with_model_armor (Prompt Injection / Jailbreak)"]
+    subgraph ToolingLayer["Deterministic Tooling Layer (No Internal LLM)"]
+        ToolSEC["fetch_company_disclosures (SEC EDGAR 8-K)"]
+        ToolGDELT["fetch_public_claims (GDELT & IR Feeds)"]
+        ToolArmor["screen_with_model_armor (Prompt Injection / Jailbreak)"]
     end
 
-    subgraph Secure Execution Sandbox
-        Agent --> Sandbox["AgentEngineSandboxCodeExecutor (Vertex AI Reasoning Engine)"]
-        Sandbox --> ToolReconcile["reconcile_claims_vs_disclosures (Join & Item Taxonomy Scoring)"]
+    subgraph SandboxEnv["Secure Execution Sandbox"]
+        Sandbox["AgentEngineSandboxCodeExecutor (Vertex AI Reasoning Engine)"]
+        ToolReconcile["reconcile_claims_vs_disclosures (Join & Item Taxonomy Scoring)"]
+        Sandbox --> ToolReconcile
     end
+
+    Agent <--> Sessions
+    Agent <--> Memory
+    Agent --> ToolSEC
+    Agent --> ToolGDELT
+    Agent --> ToolArmor
+    Agent --> Sandbox
 
     ToolSEC --> SECAPI["SEC EDGAR Submissions API (Compliant User-Agent)"]
     ToolGDELT --> GDELTAPI["GDELT DOC 2.0 API (Throttled & Fallback Cache)"]
