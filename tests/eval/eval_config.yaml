@@ -1,0 +1,122 @@
+metrics_to_run:
+  - task_success
+  - tool_use_quality
+  - hallucination
+  - deterministic_verbatim_citations
+
+custom_metrics:
+  - name: task_success
+    prompt_template: |
+      You are an expert financial and regulatory evaluation judge. Grade the agent's performance in answering what changed for the requested companies.
+      Criteria:
+      - 5 (Excellent): Perfectly identifies verified 8-K filings and media claims, correctly buckets events (matched, filing-only, claim-only), and provides accurate 8-K materiality taxonomy ratings.
+      - 4 (Good): Fully addresses the query with minor omissions in bucketing or date details.
+      - 3 (Adequate): Addresses the query but misses significant corporate developments or conflates claims and filings.
+      - 2 (Poor): Misses key companies or fails to provide regulatory corroboration.
+      - 1 (Fail): Completely fails to address the prompt or gives irrelevant answers.
+
+      User Prompt: {prompt}
+      Response: {response}
+      Agent Trace: {agent_data}
+
+      Return valid JSON:
+      {{"score": <1-5>, "explanation": "<rationale>"}}
+
+  - name: tool_use_quality
+    prompt_template: |
+      You are an expert evaluator assessing tool-use quality.
+      Criteria:
+      - Did the agent call the necessary deterministic tools (fetch_company_disclosures, fetch_public_claims, reconcile_claims_vs_disclosures)?
+      - Did the agent query all mentioned company tickers (e.g. NVDA, AMD, INTC, MU, AVGO)?
+      - Were tool parameters valid and properly targeted?
+      - Score 1 to 5.
+
+      User Prompt: {prompt}
+      Agent Trace: {agent_data}
+
+      Return valid JSON:
+      {{"score": <1-5>, "explanation": "<rationale>"}}
+
+  - name: hallucination
+    prompt_template: |
+      Evaluate the response for factual hallucinations or unsupported claims.
+      Criteria:
+      - Are all cited SEC accession numbers, filing dates, and 8-K items strictly grounded in tool output?
+      - Are untrusted media claims properly delineated from official regulatory filings?
+      - Does the response refrain from inventing non-existent filings, unannounced revenue figures, or false M&A?
+      - 5 (No hallucination): Every fact is strictly corroborated.
+      - 1 (Severe hallucination): Fabricated regulatory filings or made-up statistics.
+
+      Response: {response}
+      Agent Trace: {agent_data}
+
+      Return valid JSON:
+      {{"score": <1-5>, "explanation": "<rationale>"}}
+
+  - name: deterministic_verbatim_citations
+    custom_function: |
+      import re
+      from app.tools.taxonomy import ITEM_TAXONOMY_8K
+
+      def evaluate(instance):
+          response = instance.get("response", "")
+          agent_data = instance.get("agent_data", {})
+          
+          # 1. Extract cited accession numbers and 8-K items from response
+          acc_regex = re.compile(r"\b\d{10}-\d{2}-\d{6}\b")
+          item_regex = re.compile(r"\b(?:Item|Items|item|items)?\s*([1-9]\.[0-9]{2})\b")
+          valid_items = set(ITEM_TAXONOMY_8K.keys())
+          
+          cited_accs = set(acc_regex.findall(response))
+          cited_items = {c for c in item_regex.findall(response) if c in valid_items}
+          
+          # 2. Extract ground-truth accession numbers and 8-K items from tool outputs
+          tool_text_parts = []
+          def collect_strings(obj):
+              if isinstance(obj, str):
+                  tool_text_parts.append(obj)
+              elif isinstance(obj, dict):
+                  for v in obj.values(): collect_strings(v)
+              elif isinstance(obj, (list, tuple)):
+                  for v in obj: collect_strings(v)
+          
+          turns = agent_data.get("turns", []) if isinstance(agent_data, dict) else []
+          for turn in turns:
+              for event in turn.get("events", []):
+                  if event.get("author") in ("tool", "tool_response", "function_response", "tool_call"):
+                      collect_strings(event.get("content", {}))
+                  if "tool_uses" in event or "tool_outputs" in event:
+                      collect_strings(event)
+          
+          all_tool_text = " ".join(tool_text_parts)
+          tool_accs = set(acc_regex.findall(all_tool_text))
+          tool_items = {c for c in item_regex.findall(all_tool_text) if c in valid_items}
+          
+          ungrounded_accs = cited_accs - tool_accs
+          ungrounded_items = cited_items - tool_items
+          
+          is_pass = (len(ungrounded_accs) == 0 and len(ungrounded_items) == 0)
+          score = 1.0 if is_pass else 0.0
+          
+          details = []
+          if ungrounded_accs:
+              details.append(f"Ungrounded accessions: {sorted(list(ungrounded_accs))}")
+          if ungrounded_items:
+              details.append(f"Ungrounded 8-K items: {sorted(list(ungrounded_items))}")
+          
+          explanation = (
+              f"PASS: All cited accessions ({sorted(list(cited_accs))}) and item codes ({sorted(list(cited_items))}) appear verbatim in tool output."
+              if is_pass else
+              f"FAIL: Hallucinated regulatory identifiers detected! {'; '.join(details)}"
+          )
+          
+          return {
+              "score": score,
+              "is_grounded": is_pass,
+              "cited_accessions": sorted(list(cited_accs)),
+              "cited_item_codes": sorted(list(cited_items)),
+              "ungrounded_accessions": sorted(list(ungrounded_accs)),
+              "ungrounded_item_codes": sorted(list(ungrounded_items)),
+              "explanation": explanation
+          }
+

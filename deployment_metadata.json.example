@@ -1,0 +1,6 @@
+{
+  "remote_agent_runtime_id": "projects/<PROJECT_NUMBER>/locations/<LOCATION>/reasoningEngines/<REASONING_ENGINE_ID>",
+  "deployment_target": "agent_runtime",
+  "is_a2a": false,
+  "deployment_timestamp": "2026-10-02T00:00:00.000000+00:00"
+}

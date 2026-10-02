@@ -1,0 +1,81 @@
+{
+  "dataset_name": "multi_turn_analyst_sector_intelligence",
+  "description": "Multi-turn evaluation set of an institutional sector analyst querying 'what changed this week' across semiconductor leaders (NVDA, AMD, INTC, MU, AVGO).",
+  "target_agent": "industry_watch",
+  "eval_cases": [
+    {
+      "eval_case_id": "case_1_nvda_amd_comparative_reconciliation",
+      "description": "Analyst asks for NVDA recent changes, pivots to AMD comparison, and audits unverified media rumors.",
+      "turns": [
+        {
+          "turn_index": 0,
+          "prompt": "What changed this week for NVDA? Give me the verified 8-K filings and public news claims.",
+          "expected_topics": ["NVDA", "8-K filings", "Blackwell shipments", "Record Q2 revenue", "reconciliation"],
+          "expected_tools": ["fetch_company_disclosures", "fetch_public_claims", "reconcile_claims_vs_disclosures"],
+          "expected_verbatim_accessions": ["0001045810-26-000078", "0001045810-26-000073"],
+          "expected_verbatim_items": ["8.01", "2.02", "9.01"]
+        },
+        {
+          "turn_index": 1,
+          "prompt": "Now what changed this week for AMD over the same period, and how does its materiality compare to NVDA?",
+          "expected_topics": ["AMD", "Form 8-K", "financial results", "materiality comparison", "Critical tier"],
+          "expected_tools": ["fetch_company_disclosures", "fetch_public_claims", "reconcile_claims_vs_disclosures"],
+          "expected_verbatim_accessions": ["0000002488-26-000121", "0000002488-26-000182", "0000002488-26-000163"],
+          "expected_verbatim_items": ["2.02", "7.01", "9.01", "3.02", "5.02"]
+        },
+        {
+          "turn_index": 2,
+          "prompt": "Are there any uncorroborated media rumors or leak claims for NVDA and AMD that lack official 8-K filings?",
+          "expected_topics": ["claim-only", "UNSUBSTANTIATED_BY_SEC_8K", "Rubin architecture rumor", "MI325X", "MI350 leak"],
+          "expected_tools": ["reconcile_claims_vs_disclosures"],
+          "expected_verbatim_accessions": [],
+          "expected_verbatim_items": []
+        }
+      ]
+    },
+    {
+      "eval_case_id": "case_2_intc_mu_cross_company_audit",
+      "description": "Analyst checks Intel (INTC) and Micron (MU) weekly developments and drills into highest materiality items.",
+      "turns": [
+        {
+          "turn_index": 0,
+          "prompt": "What changed this week for INTC and MU? Reconcile their press releases against regulatory disclosures.",
+          "expected_topics": ["INTC", "MU", "reconciliation", "Form 8-K", "press releases"],
+          "expected_tools": ["fetch_company_disclosures", "fetch_public_claims", "reconcile_claims_vs_disclosures"],
+          "expected_verbatim_accessions": ["0000050863-26-000085", "0000723125-26-000062"],
+          "expected_verbatim_items": ["5.02", "7.01", "2.02"]
+        },
+        {
+          "turn_index": 1,
+          "prompt": "Which 8-K item codes drove the highest materiality scores for INTC and MU, and what were the accession numbers?",
+          "expected_topics": ["materiality scores", "highest tier", "Item 2.02", "Item 5.02", "accessions"],
+          "expected_tools": ["reconcile_claims_vs_disclosures"],
+          "expected_verbatim_accessions": ["0000050863-26-000085", "0000723125-26-000062"],
+          "expected_verbatim_items": ["2.02", "5.02"]
+        }
+      ]
+    },
+    {
+      "eval_case_id": "case_3_avgo_nvda_governance_and_discrepancy",
+      "description": "Analyst surveys Broadcom (AVGO) and NVIDIA (NVDA) for material governance or agreement events.",
+      "turns": [
+        {
+          "turn_index": 0,
+          "prompt": "What changed this week for Broadcom (AVGO) and NVIDIA (NVDA)? Flag any material definitive agreements or debt obligations.",
+          "expected_topics": ["AVGO", "NVDA", "Item 1.01", "Item 2.03", "material agreements"],
+          "expected_tools": ["fetch_company_disclosures", "fetch_public_claims", "reconcile_claims_vs_disclosures"],
+          "expected_verbatim_accessions": ["0001730168-26-000051", "0001045810-26-000069"],
+          "expected_verbatim_items": ["1.01", "2.03", "7.01", "9.01"]
+        },
+        {
+          "turn_index": 1,
+          "prompt": "Break down the 8-K taxonomy items for AVGO: which ones are Critical or High, and did any public claims fail SEC corroboration?",
+          "expected_topics": ["AVGO", "materiality breakdown", "Item 1.01 High Materiality", "unsubstantiated claims"],
+          "expected_tools": ["reconcile_claims_vs_disclosures"],
+          "expected_verbatim_accessions": ["0001730168-26-000051"],
+          "expected_verbatim_items": ["1.01", "8.01", "9.01"]
+        }
+      ]
+    }
+  ]
+}

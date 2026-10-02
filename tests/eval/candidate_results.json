@@ -1,0 +1,48 @@
+{
+  "benchmark_name": "industry_watch_multi_turn_candidate",
+  "evaluated_at": "2026-10-02T20:38:26Z",
+  "aggregate_scores": {
+    "task_success_avg": 4.67,
+    "tool_use_quality_avg": 5.0,
+    "hallucination_avg": 5.0,
+    "verbatim_citations_pass_rate_pct": 100.0
+  },
+  "cases": [
+    {
+      "case_id": "case_1_nvda_amd_comparative_reconciliation",
+      "task_success": 4,
+      "tool_use_quality": 5,
+      "hallucination": 5,
+      "verbatim_citations_score": 1.0,
+      "verbatim_grounded": true,
+      "cited_accessions_count": 10,
+      "cited_items_count": 9,
+      "ungrounded_accessions": [],
+      "ungrounded_items": []
+    },
+    {
+      "case_id": "case_2_intc_mu_cross_company_audit",
+      "task_success": 5,
+      "tool_use_quality": 5,
+      "hallucination": 5,
+      "verbatim_citations_score": 1.0,
+      "verbatim_grounded": true,
+      "cited_accessions_count": 10,
+      "cited_items_count": 6,
+      "ungrounded_accessions": [],
+      "ungrounded_items": []
+    },
+    {
+      "case_id": "case_3_avgo_nvda_governance_and_discrepancy",
+      "task_success": 5,
+      "tool_use_quality": 5,
+      "hallucination": 5,
+      "verbatim_citations_score": 1.0,
+      "verbatim_grounded": true,
+      "cited_accessions_count": 10,
+      "cited_items_count": 8,
+      "ungrounded_accessions": [],
+      "ungrounded_items": []
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "eval_cases": [
+    {
+      "eval_case_id": "greeting",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Hello, what can you help me with?"}]
+      }
+    },
+    {
+      "eval_case_id": "semiconductor_overview",
+      "prompt": {
+        "role": "user",
+        "parts": [{"text": "Can you compare the competitive positioning of NVDA, AMD, and INTC in the data center compute market?"}]
+      }
+    }
+  ]
+}
